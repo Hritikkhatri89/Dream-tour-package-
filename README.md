@@ -35,3 +35,6 @@ Fully responsive design for desktop, tablet, and mobile.
 Easy setup on local servers using XAMPP/WAMP.
 
 Well-organized MySQL database structure for reliability and speed.
+
+<img width="893" height="424" alt="image" src="https://github.com/user-attachments/assets/52830858-5dbd-4b4d-8969-8515b5f6057e" />
+
