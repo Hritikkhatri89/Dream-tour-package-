@@ -35,7 +35,3 @@ Fully responsive design for desktop, tablet, and mobile.
 Easy setup on local servers using XAMPP/WAMP.
 
 Well-organized MySQL database structure for reliability and speed.
-
-🌟 Why Choose Dream Tour & Travel?
-
-Whether you’re a travel agency looking to simplify operations or a travel enthusiast seeking hassle-free bookings, this system is designed to save time, enhance user experience, and bring your travel dreams to life.
