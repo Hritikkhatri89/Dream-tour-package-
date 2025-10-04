@@ -1,0 +1,157 @@
+<?php
+session_start();
+include("db.php");
+
+if (isset($_POST['ajax_book']) && isset($_SESSION['uid'])) {
+    $pid = intval($_POST['pid']);
+    $uid = $_SESSION['uid'];
+
+    $sql = "INSERT INTO bookings (user_id, package_id, status, booking_date)
+            VALUES ('$uid', '$pid', 'confirm', NOW())";
+
+    if (mysqli_query($conn, $sql)) {
+        echo json_encode(["status" => "success", "message" => "Booking confirmed!"]);
+    } else {
+        echo json_encode(["status" => "error", "message" => mysqli_error($conn)]);
+    }
+    exit;
+}
+
+$packages = mysqli_query($conn, "SELECT * FROM packages");
+if (!$packages) {
+    die("SQL Error: " . mysqli_error($conn));
+}
+?>
+<html>
+<head>
+  <title>Tour Packages</title>
+  <link href="bootstrap-5.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color:#fdfaf6;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .navbar-custom {
+      background-color: #2b3a55 !important;
+    }
+    .navbar-custom .navbar-brand,
+    .navbar-custom .nav-link {
+      color: #fff !important;
+      font-weight: 500;
+    }
+    .navbar-custom .nav-link:hover {
+      color: #f1a501 !important;
+    }
+    h3.section-title {
+      font-weight: 700;
+      color: #2b3a55;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    h3.section-title::after {
+      content: "";
+      display: block;
+      width: 60px;
+      height: 4px;
+      background: #f1a501;
+      margin: 8px auto 0;
+      border-radius: 2px;
+    }
+    .card {
+      border: none;
+      border-radius: 15px;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+    }
+    .card-img-top {
+      height: 200px;
+      object-fit: cover;
+    }
+    .card-body {
+      padding: 20px;
+    }
+    .card-title {
+      font-weight: 600;
+      color: #2b3a55;
+    }
+    .card p {
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .btn-book {
+      background: linear-gradient(135deg, #f1a501, #ff6600);
+      border: none;
+      font-weight: 600;
+      color: white;
+      border-radius: 8px;
+      padding: 8px 18px;
+      transition: 0.3s;
+    }
+    .btn-book:hover {
+      background: linear-gradient(135deg, #d89000, #cc5200);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-custom shadow-sm">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" href="index.php">
+      <img src="img/logo.png" alt="Logo" height="40" class="me-2">
+      <div class="fw-bold fs-5">Dream Tour & Travel Management</div>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <div class="navbar-toggler-icon"></div>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="about.php">About</a></li>
+        <li class="nav-item"><a class="nav-link active" href="tourpackage.php">Tour Packages</a></li>
+        <?php if(isset($_SESSION['uid'])): ?>
+          <li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
+        <?php else: ?>
+          <li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>
+        <?php endif; ?>
+        <li class="nav-item"><a class="nav-link" href="admin/login.php">Admin</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-5">
+  <h3 class="text-center section-title">Available Tour Packages</h3>
+  <div class="row g-4">
+    <?php while($row = mysqli_fetch_assoc($packages)) { ?>
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+          <img src="img/<?php echo htmlspecialchars($row['image']); ?>" alt="Package Image" class="card-img-top">
+          <div class="card-body">
+            <h5 class="card-title"><?php echo htmlspecialchars($row['title']); ?></h5>
+            <p><label>Type:</label> <?= htmlspecialchars($row['type']); ?></p>
+            <p><strong>Duration:</strong> <?= htmlspecialchars($row['duration']); ?></p>
+            <p><strong>Price:</strong> ₹<?= htmlspecialchars($row['price']); ?></p>
+            <p><strong>Highlights:</strong> <?= htmlspecialchars($row['highlights']); ?></p>
+            <p><strong>Description:</strong><br><?= nl2br(htmlspecialchars($row['description'])); ?></p>
+
+       <?php if (isset($_SESSION['uid'])) { ?>
+    <a href="book_now.php?pid=<?php echo $row['id']; ?>" class="btn btn-book btn-sm">Book Now</a>
+<?php } else { ?>
+    <a href="login.php" class="btn btn-outline-primary btn-sm">Login to Book</a>
+<?php } ?>
+
+          </div>
+        </div>
+      </div>
+    <?php } ?>
+  </div>
+</div>
+
+<script src="bootstrap-5.3.7-dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
