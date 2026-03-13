@@ -1,42 +1,68 @@
-# Dream-tour-package-
-🌟 Dream Tour & Travel Management System 🌟
+🌟 Dream Tour & Travel Management System
 
-The Dream Tour & Travel Management System is a powerful PHP & MySQL-based web application that makes planning, booking, and managing tours a breeze. Designed for both travel enthusiasts and agencies, this platform allows users to discover dream destinations and book tours online, while giving admins full control through a secure and intuitive dashboard.
+The Dream Tour & Travel Management System is a powerful PHP & MySQL-based web application designed to simplify the process of planning, booking, and managing travel tours. The platform allows users to explore destinations, book tour packages online, and manage their travel plans efficiently, while administrators can control the entire system through a secure dashboard.
 
-🚀 Built to run seamlessly on XAMPP/WAMP, this system brings speed, efficiency, and convenience to travel management—all from your localhost.
+The system runs smoothly on XAMPP/WAMP local servers, making it easy for developers and students to test and deploy the application.
 
-✨ Key Features
+🚀 Key Features
 🌍 User Panel
 
-Browse a variety of tour packages with stunning images and detailed itineraries.
+Browse different tour packages with images, pricing, and detailed itineraries.
 
-Book tours online quickly and securely.
+Book tours online quickly through a simple booking form.
 
-Manage your bookings anytime from your profile.
+Secure online payment integration using Razorpay (Test Mode).
 
-Reach out via contact forms for personalized travel plans.
+Manage bookings directly from the user dashboard.
+
+Contact the travel agency using the integrated contact form.
+
+🔐 Security & Account Features
+
+Secure Login and Registration System
+
+Forgot Password with OTP Verification
+
+Users can reset their password through email OTP verification.
+
+OTP ensures secure password recovery and prevents unauthorized access.
+
+Password encryption for better account security.
+
+💳 Payment Integration
+
+Razorpay Payment Gateway Integration (Test Mode)
+
+Users can make secure online payments for tour bookings.
+
+Payment verification ensures successful booking confirmation.
+
+Test mode allows safe payment testing during development.
 
 🛠️ Admin Panel
 
-Add, update, or delete tour packages easily.
+Add, edit, or delete tour packages.
 
-Monitor and manage user accounts and bookings.
+Manage user accounts and bookings.
 
-Keep track of all activities via a comprehensive dashboard.
+Track booking details and payment status.
 
-Respond to user queries and provide support efficiently.
+View user inquiries and respond through the admin dashboard.
+
+Monitor overall system activities from the admin panel.
 
 💡 System Highlights
 
-Secure authentication for both users and admins.
+PHP & MySQL based web application.
 
-Fully responsive design for desktop, tablet, and mobile.
+Fully responsive design (Desktop, Tablet, Mobile).
 
-Easy setup on local servers using XAMPP/WAMP.
+Secure authentication for users and admins.
 
-Well-organized MySQL database structure for reliability and speed.
+Razorpay payment gateway integration.
 
-output:
+OTP-based password recovery system.
 
-<img width="893" height="424" alt="image" src="https://github.com/user-attachments/assets/52830858-5dbd-4b4d-8969-8515b5f6057e" />
+Easy installation using XAMPP/WAMP.
 
+Well-structured MySQL database for fast performance.
