@@ -1,31 +1,20 @@
 <?php
+session_start();
 include("../db.php");
 
-// 🔹 Delete package
-if (isset($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
-
-    // delete related bookings
-    mysqli_query($conn, "DELETE FROM bookings WHERE package_id = $id");
-
-    // delete package itself
-    if (mysqli_query($conn, "DELETE FROM packages WHERE id = $id")) {
-        echo "<script>alert('Package deleted successfully'); window.location='view_packages.php';</script>";
-        exit;
-    } else {
-        echo "<script>alert('Error deleting package'); window.location='view_packages.php';</script>";
-        exit;
-    }
+// Admin login check
+if (!isset($_SESSION['admin_email'])) {
+    header("Location: ../login.php");
+    exit();
 }
-
-// 🔹 Fetch all packages
-$result = mysqli_query($conn, "SELECT * FROM packages");
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>View Packages</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Hotels | Admin Panel</title>
   <link href="../bootstrap-5.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -95,7 +84,7 @@ $result = mysqli_query($conn, "SELECT * FROM packages");
         margin-bottom: 35px; 
      }
 
-     .package-card {
+     .hotel-card {
         background: white;
         border-radius: 20px;
         overflow: hidden;
@@ -106,20 +95,23 @@ $result = mysqli_query($conn, "SELECT * FROM packages");
         flex-direction: column;
         box-shadow: 0 4px 15px rgba(0,0,0,0.02);
      }
-     .package-card:hover {
+     .hotel-card:hover {
         transform: translateY(-8px);
         box-shadow: 0 12px 25px rgba(0,0,0,0.08);
      }
-     .package-img {
+     .hotel-img {
         width: 100%;
         height: 180px;
         object-fit: cover;
      }
-     .package-content { padding: 20px; flex-grow: 1; }
-     .package-content h5 { font-weight: 700; color: #1e293b; font-size: 1.1rem; margin-bottom: 12px; }
-     .pkg-info { font-size: 0.85rem; color: #64748b; margin-bottom: 6px; display: flex; align-items: center; }
-     .pkg-info i { color: #0fb9b1; margin-right: 8px; font-size: 0.9rem; }
+     .hotel-content { padding: 20px; flex-grow: 1; }
+     .hotel-content h5 { font-weight: 700; color: #1e293b; font-size: 1.1rem; margin-bottom: 12px; }
+     .category { font-size: 0.8rem; color: #0fb9b1; font-weight: 500; text-transform: uppercase; margin-bottom: 15px; display: block; }
+     
+     .info-item { font-size: 0.85rem; color: #64748b; margin-bottom: 8px; display: flex; align-items: flex-start; }
+     .info-item i { color: #0fb9b1; margin-right: 10px; font-size: 1rem; }
      .price-tag { font-size: 1.2rem; font-weight: 700; color: #0fb9b1; margin-top: 15px; display: block; }
+     .price-tag small { font-size: 0.8rem; color: #64748b; font-weight: 400; }
      
      .card-actions {
         padding: 15px 20px;
@@ -128,41 +120,35 @@ $result = mysqli_query($conn, "SELECT * FROM packages");
         gap: 10px;
         border-top: 1px solid #f1f5f9;
      }
-     .btn-edit { background: #fff; color: #f59e0b; border: 1px solid #fed7aa; }
+     .btn-action {
+        flex: 1;
+        padding: 10px;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+     }
+     .btn-edit { background: white; color: #f59e0b; border: 1px solid #fed7aa; }
      .btn-edit:hover { background: #fff7ed; border-color: #f59e0b; }
-     .btn-delete { background: #fff; color: #ef4444; border: 1px solid #fee2e2; }
+     .btn-delete { background: white; color: #ef4444; border: 1px solid #fee2e2; }
      .btn-delete:hover { background: #fef2f2; border-color: #ef4444; }
-     
+
      .btn-create {
         background: #0fb9b1;
         color: white;
         border: none;
-        padding: 10px 20px;
+        padding: 10px 25px;
         border-radius: 12px;
         font-weight: 500;
         box-shadow: 0 4px 12px rgba(15, 185, 177, 0.2);
-     }
-     .btn-create:hover { background: #0da59e; transform: translateY(-2px); }
-
-     .btn-back {
-        background: #fff;
-        color: #64748b;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 8px 20px;
         text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        margin-bottom: 25px;
-        font-weight: 500;
-        transition: all 0.3s ease;
      }
-     .btn-back:hover { background: #f8fafc; color: #1e293b; transform: translateY(-2px); }
+     .btn-create:hover { background: #0da59e; transform: translateY(-2px); color: white; }
   </style>
 </head>
 <body>
-
-
 
 
 <!-- Sidebar -->
@@ -183,59 +169,61 @@ $result = mysqli_query($conn, "SELECT * FROM packages");
 
 <!-- Main Content -->
 <div class="main">
-  <div class="top-bar">
-    <div>
-      <h2 class="page-title">All Tour Packages</h2>
-      <p class="text-muted small">Manage your current travel offerings</p>
-    </div>
-    <a href="create-package.php" class="btn-create text-decoration-none shadow-sm">+ Create New Package</a>
-  </div>
-
-  <div class="row">
-    <?php if ($result && mysqli_num_rows($result) > 0): ?>
-      <?php while ($row = mysqli_fetch_assoc($result)): ?>
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-          <div class="package-card border-0">
-            <?php
-              $images = explode(',', $row['image']);
-              $firstImage = trim($images[0]);
-              $imgPath = "../img/" . $firstImage;
-
-              if (!empty($firstImage) && file_exists($imgPath)) {
-                  echo "<img src='" . htmlspecialchars($imgPath) . "' class='package-img' alt='Package Image'>";
-              } else {
-                  echo "<div class='bg-light text-muted text-center package-img d-flex align-items-center justify-content-center'>No Image</div>";
-              }
-            ?>
-
-            <div class="package-content">
-              <h5><?= htmlspecialchars($row['title']); ?></h5>
-              <div class="pkg-info"><i class="bi bi-tag-fill"></i> <?= htmlspecialchars($row['type']); ?></div>
-              <div class="pkg-info"><i class="bi bi-clock-fill"></i> <?= htmlspecialchars($row['duration']); ?></div>
-              <span class="price-tag">₹<?= number_format($row['price']); ?></span>
-            </div>
-
-            <div class="card-actions px-3 pb-3 pt-0 border-0 bg-white">
-              <a href="create-package.php?edit=<?= $row['id']; ?>" class="btn flex-grow-1 btn-edit rounded-pill text-decoration-none py-2">
-                <i class="bi bi-pencil me-1"></i> Edit
-              </a>
-              <a href="view_packages.php?delete=<?= $row['id']; ?>" onclick="return confirm('Delete this package?');" class="btn flex-grow-1 btn-delete rounded-pill text-decoration-none py-2">
-                <i class="bi bi-trash me-1"></i> Delete
-              </a>
-            </div>
-          </div>
+    <div class="top-bar">
+        <div>
+            <h2 class="page-title">All Registered Hotels</h2>
+            <p class="text-muted small">Manage hotel partners and their details</p>
         </div>
-      <?php endwhile; ?>
-    <?php else: ?>
-      <div class="col-12 text-center py-5">
-        <p class="text-muted">No packages found. Start by creating one!</p>
-      </div>
-    <?php endif; ?>
-  </div>
+        <a href="add_hotel.php" class="btn-create shadow-sm">+ Add New Hotel</a>
+    </div>
+
+    <div class="row g-4">
+    <?php
+    $sql = mysqli_query($conn, "SELECT * FROM hotels ORDER BY id DESC");
+    if (mysqli_num_rows($sql) > 0) {
+        while ($row = mysqli_fetch_assoc($sql)) {
+            $images = explode(",", $row['images']);
+            $firstImage = "../Hotel/" . trim($images[0]);
+            $pid = $row['package_id'];
+            $pkg = mysqli_fetch_assoc(mysqli_query($conn, "SELECT title FROM packages WHERE id='$pid'"));
+    ?>
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="hotel-card border-0">
+                <img src="<?= $firstImage ?>" class="hotel-img" alt="Hotel Image">
+                
+                <div class="hotel-content">
+                    <span class="category"><?= htmlspecialchars($row['category']) ?> Star Hotel</span>
+                    <h5><?= htmlspecialchars($row['name']) ?></h5>
+                    
+                    <div class="info-item mt-3">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span class="text-truncate"><?= htmlspecialchars($row['location']) ?></span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="bi bi-box-seam-fill"></i>
+                        <span class="text-truncate"><strong>Pkg:</strong> <?= htmlspecialchars($pkg['title'] ?? "Universal") ?></span>
+                    </div>
+                    
+                    <span class="price-tag mt-3">₹<?= number_format($row['price']) ?> <small>/ night</small></span>
+                </div>
+
+                <div class="card-actions bg-white border-0 px-3 pb-3 pt-0">
+                    <a href="edit_hotel.php?id=<?= $row['id'] ?>" class="btn-action btn-edit">Edit</a>
+                    <a href="delete_hotel.php?id=<?= $row['id'] ?>" class="btn-action btn-delete" 
+                       onclick="return confirm('Delete this hotel?');">Delete</a>
+                </div>
+            </div>
+        </div>
+    <?php
+        }
+    } else {
+        echo "<div class='col-12 py-5 text-center text-muted'><p>No hotels found. Add your first hotel!</p></div>";
+    }
+    ?>
+    </div>
 </div>
 
+<script src="../bootstrap-5.3.7-dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
-

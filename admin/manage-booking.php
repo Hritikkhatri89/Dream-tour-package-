@@ -1,185 +1,276 @@
 <?php
-session_start();
 include("../db.php");
+session_start();
 
-if (!isset($_SESSION['admin'])) {
-    header("Location: login.php");
-    exit;
-}
-if (isset($_GET['del'])) {
-    $id = intval($_GET['del']);
-    mysqli_query($conn, "DELETE FROM bookings WHERE id = $id");
+
+if (isset($_GET['confirm'])) {
+    $id = intval($_GET['confirm']);
+    mysqli_query($conn, "UPDATE bookings SET status='Confirm' WHERE id=$id");
     header("Location: manage-booking.php");
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
-    $edit_id = intval($_POST['edit_id']);
-    $new_status = mysqli_real_escape_string($conn, $_POST['status']);
-    mysqli_query($conn, "UPDATE bookings SET status='$new_status' WHERE id=$edit_id");
+if (isset($_GET['cancel'])) {
+    $id = intval($_GET['cancel']);
+    mysqli_query($conn, "UPDATE bookings SET status='Cancelled' WHERE id=$id");
     header("Location: manage-booking.php");
     exit;
 }
 
-$rs = mysqli_query($conn,
-    "SELECT b.id, u.name, p.title, b.status 
-     FROM bookings b
-     JOIN users u ON b.user_id = u.id
-     JOIN packages p ON b.package_id = p.id"
-);
+if (isset($_GET['delete'])) {
+    $id = intval($_GET['delete']);
+    mysqli_query($conn, "DELETE FROM bookings WHERE id=$id");
+    header("Location: manage-booking.php");
+    exit;
+}
+
+$query = "
+SELECT bookings.*, users.name AS user_name 
+FROM bookings 
+LEFT JOIN users ON bookings.user_id = users.id
+ORDER BY bookings.id DESC
+";
+
+$result = mysqli_query($conn, $query);
 ?>
-<html>
+
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Manage Bookings</title>
-    <link href="../bootstrap-5.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <style>
-        body {
-            background: linear-gradient(to right, #f0f9ff, #e0f7fa);
-            font-family: 'Segoe UI', sans-serif;
-            min-height: 100vh;
-        }
-        .card {
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .table thead {
-            background-color: #e9ecef;
-        }
-        .table-hover tbody tr:hover {
-            background-color: rgba(13,110,253,0.05);
-        }
-        .page-title {
-            color: #0d6efd;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-        }
-        .btn-delete {
-            background: linear-gradient(45deg, #ff4b2b, #ff416c);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            transition: 0.3s;
-        }
-        .btn-delete:hover {
-            background: linear-gradient(45deg, #e03e25, #e0355c);
-            transform: scale(1.05);
-        }
-        .btn-edit {
-            background: linear-gradient(45deg, #00b09b, #96c93d);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            transition: 0.3s;
-        }
-        .btn-edit:hover {
-            background: linear-gradient(45deg, #00997e, #7dbb2f);
-            transform: scale(1.05);
-        }
-        .badge {
-            font-size: 0.85rem;
-            padding: 6px 10px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Bookings</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+     body { 
+        font-family: 'Outfit', 'Poppins', sans-serif; 
+        background: #f4f7fa; 
+        margin: 0; 
+        color: #1e293b;
+        overflow-x: hidden;
+     }
+
+     /* Sidebar */
+
+     .sidebar {
+        height: 100vh;
+        width: 260px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: #0F172A; 
+        padding: 20px 15px;
+        color: white;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+        z-index: 1000;
+        overflow-y: auto;
+     }
+     .sidebar h4 {
+        font-weight: 700;
+        margin-bottom: 25px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #0fb9b1;
+        font-size: 1.4rem;
+        font-family: 'Outfit';
+     }
+     .sidebar a {
+        font-family: 'Outfit', sans-serif;
+        display: flex;
+        align-items: center;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        color: #94a3b8;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        font-size: 0.85rem;
+     }
+     .sidebar a i { margin-right: 15px; font-size: 1.2rem; }
+     .sidebar a:hover, .sidebar a.active {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        transform: translateX(5px);
+     }
+     .sidebar a.active { background: #0fb9b1; color: white; }
+     .sidebar a.logout { margin-top: 30px; color: #ef4444; }
+
+     .main { margin-left: 260px; padding: 40px 50px; }
+     .page-title { font-weight: 700; color: #1e293b; margin-bottom: 30px; }
+
+     .table-container {
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        overflow-x: auto;
+     }
+     .table { color: #1e293b; border-color: #f1f5f9; font-size: 0.85rem; }
+     .table thead { background: #f8fafc; color: #64748b; border-color: transparent; }
+     .table thead th { border: none; padding: 15px; font-weight: 500; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
+     .table tbody td { padding: 12px 15px; border-color: #f1f5f9; vertical-align: middle; }
+     .table tbody tr:hover { background: #fcfdfe; }
+
+     .badge {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.7rem;
+     }
+     .badge-pending { background: #fff7ed; color: #f59e0b; border: 1px solid #ffedd5; }
+     .badge-confirmed { background: #f0fdf4; color: #10b981; border: 1px solid #dcfce7; }
+     .badge-cancelled { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
+
+     .btn-action {
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin: 2px;
+        text-decoration: none;
+        display: inline-block;
+     }
+     .btn-confirm { background: #10b981; color: white; }
+     .btn-cancel { background: #f59e0b; color: white; }
+     .btn-delete { background: white; color: #ef4444; border: 1px solid #fee2e2; }
+     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+
+     .btn-back {
+        background: #fff;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 8px 20px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 25px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+     }
+     .btn-back:hover { background: #f8fafc; color: #1e293b; transform: translateY(-2px); }
+</style>
 </head>
 <body>
 
-<div class="container py-5">
-    <div class="card p-4">
-        <h4 class="page-title mb-4"><i class="bi bi-journal-check"></i> Manage Bookings</h4>
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped table-hover align-middle text-center">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        <th>Package</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (mysqli_num_rows($rs) > 0): ?>
-                        <?php while($b = mysqli_fetch_assoc($rs)): ?>
-                        <tr>
-                            <td><?= $b['id'] ?></td>
-                            <td><?= htmlspecialchars($b['name']) ?></td>
-                            <td><?= htmlspecialchars($b['title']) ?></td>
-                            <td>
-                                <div class="badge <?= ($b['status'] == 'Confirmed') ? 'bg-success' : 'bg-warning text-dark'; ?>">
-                                    <?= $b['status'] ?>
-                                </div>
-                            </td>
-                            <td>
-                                <button class="btn-edit" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#editModal" 
-                                        data-id="<?= $b['id'] ?>" 
-                                        data-status="<?= $b['status'] ?>">
-                                    <i class="bi bi-pencil-square"></i> Edit
-                                </button>
-                                <a href="?del=<?= $b['id'] ?>" 
-                                   class="btn-delete"
-                                   onclick="return confirm('Are you sure you want to delete this booking?')">
-                                   <i class="bi bi-trash"></i> Delete
-                                </a>
-                            </td>
-                        </tr>
-                        <?php endwhile; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">No bookings found</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h4>Admin Panel</h4>
+  <a href="dashboard.php" class="<?= (basename($_SERVER['PHP_SELF']) == 'dashboard.php') ? 'active' : '' ?>"><i class="bi bi-grid-fill"></i> Dashboard</a>
+  <a href="create-package.php" class="<?= (basename($_SERVER['PHP_SELF']) == 'create-package.php') ? 'active' : '' ?>"><i class="bi bi-plus-square-fill"></i> Create Package</a>
+  <a href="view_packages.php" class="<?= (in_array(basename($_SERVER['PHP_SELF']), ['view_packages.php', 'edit_package.php'])) ? 'active' : '' ?>"><i class="bi bi-stack"></i> All Packages</a>
+  <a href="add_itinerary.php" class="<?= (basename($_SERVER['PHP_SELF']) == 'add_itinerary.php') ? 'active' : '' ?>"><i class="bi bi-calendar-plus"></i> Add Itinerary</a>
+  <a href="view_itinerary.php" class="<?= (in_array(basename($_SERVER['PHP_SELF']), ['view_itinerary.php', 'edit_itinerary.php'])) ? 'active' : '' ?>"><i class="bi bi-calendar2-week"></i> View Itineraries</a>
+  <a href="add_hotel.php" class="<?= (basename($_SERVER['PHP_SELF']) == 'add_hotel.php') ? 'active' : '' ?>"><i class="bi bi-building-add"></i> Add Hotel</a>
+  <a href="view_hotel.php" class="<?= (in_array(basename($_SERVER['PHP_SELF']), ['view_hotel.php', 'edit_hotel.php'])) ? 'active' : '' ?>"><i class="bi bi-buildings"></i> View Hotels</a>
+  <a href="manage-user.php" class="<?= (basename($_SERVER['PHP_SELF']) == 'manage-user.php') ? 'active' : '' ?>"><i class="bi bi-people-fill"></i> Manage Users</a>
+  <a href="manage-booking.php" class="<?= (basename($_SERVER['PHP_SELF']) == 'manage-booking.php') ? 'active' : '' ?>"><i class="bi bi-journal-check"></i> Manage Bookings</a>
+  <a href="view-contact.php" class="<?= (basename($_SERVER['PHP_SELF']) == 'view-contact.php') ? 'active' : '' ?>"><i class="bi bi-envelope-fill"></i> Messages</a>
+  <a href="logout.php" class="logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+</div>
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<!-- Main Page -->
+<div class="main">
+    <a href="dashboard.php" class="btn-back">
+        <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
+    </a>
+    <h3 class="page-title">📅 Manage Bookings</h3>
+
+    <div class="table-container">
+    <table class="table text-center align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Guest</th>
+                <th>Pkg</th>
+                <th>Hotel</th>
+                <th>Image</th>
+                <th>Rms</th>
+                <th>Adults / Children</th>
+                <th>Price</th>
+                <th>Dates</th>
+                <th>Status</th>
+                <th width="180px">Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+
+            <?php 
+                $imgs = explode(",", $row['image']);
+                $firstImage = $imgs[0];
+            ?>
+
+            <tr>
+                <td class="text-muted fw-bold"><?= $row['id'] ?></td>
+                <td><strong class="text-dark"><?= $row['user_name'] ?></strong></td>
+                <td><span class="badge bg-light text-dark border">ID: <?= $row['package_id'] ?></span></td>
+                <td><div class="small fw-bold text-primary"><?= $row['hotel_name'] ?></div></td>
+
+                <td>
+                    <img src="../Hotel/<?= $firstImage ?>" 
+                         width="60" height="45" 
+                         style="object-fit:cover;border-radius:8px; border: 1px solid rgba(255,255,255,0.1);">
+                </td>
+
+                <td><span class="fw-bold"><?= $row['rooms'] ?></span></td>
+
+                <td>
+                    <div class="small">Adults: <?= $row['adults'] ?></div>
+                    <div class="small">Children: <?= $row['children'] ?></div>
+                </td>
+                
+                <td><span class="text-success fw-bold">₹<?= number_format($row['price']) ?></span></td>
+                
+                <td>
+                    <div style="font-size: 0.75rem;">In: <?= $row['checkin'] ?></div>
+                    <div style="font-size: 0.75rem;">Out: <?= $row['checkout'] ?></div>
+                </td>
+
+                <td>
+                    <?php if ($row['status'] == 'Pending') { ?>
+                        <span class="badge badge-pending">Pending</span>
+                    <?php } elseif ($row['status'] == 'Confirm' || $row['status'] == 'Paid') { ?>
+                        <span class="badge badge-confirmed">Confirmed</span>
+                    <?php } else { ?>
+                        <span class="badge badge-cancelled">Cancelled</span>
+                    <?php } ?>
+                </td>
+
+                <td>
+                    <div class="d-flex flex-wrap justify-content-center">
+                        <?php if ($row['status'] == 'Pending') { ?>
+                            <a href="?confirm=<?= $row['id'] ?>" class="btn-action btn-confirm">Confirm</a>
+                            <a href="?cancel=<?= $row['id'] ?>" class="btn-action btn-cancel">Cancel</a>
+                        <?php } ?>
+
+                        <a href="?delete=<?= $row['id'] ?>" 
+                           class="btn-action btn-delete"
+                           onclick="return confirm('Delete booking?');">
+                           <i class="bi bi-trash-fill"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+
+        <?php } ?>
+        </tbody>
+    </table>
     </div>
 </div>
 
-<!-- Edit Modal -->
-<div class="modal fade" id="editModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="POST" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Edit Booking Status</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" name="edit_id" id="edit_id">
-        <div class="mb-3">
-            <label>Status:</label>
-            <select name="status" id="edit_status" class="form-control">
-                <option value="Pending">Pending</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Cancelled">Cancelled</option>
-            </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script src="../bootstrap-5.3.7-dist/js/bootstrap.bundle.min.js"></script>
-<script>
-document.querySelectorAll('.btn-edit').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.getElementById('edit_id').value = this.dataset.id;
-        document.getElementById('edit_status').value = this.dataset.status;
-    });
-});
-</script>
 </body>
 </html>
+
+
+
