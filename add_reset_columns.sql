@@ -1,0 +1,6 @@
+-- Run this SQL in phpMyAdmin to add required columns for password reset
+ALTER TABLE users 
+ADD COLUMN IF NOT EXISTS reset_code VARCHAR(10) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS code_expire DATETIME DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS reset_token VARCHAR(100) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS token_expire DATETIME DEFAULT NULL;

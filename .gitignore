@@ -1,0 +1,19 @@
+# Vendor directory
+vendor/
+
+# Temp/debug files
+temp_*.php
+check_*.php
+audit_*.php
+fix_db_keys.php
+*_utf8.json
+remaining_*.txt
+sample_images.txt
+
+# Sensitive config (keep db.php but ignore local overrides)
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
